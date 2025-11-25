@@ -1,0 +1,66 @@
+
+services:
+  # --- 1. Service Mobilité (REST) ---
+  service-mobilite:
+    build: ./service-mobilite
+    ports:
+      - "5001:5001"
+    networks:
+      - smartcity-net
+
+  # --- 2. Service Qualité Air (SOAP) ---
+  service-qualite-air:
+    build: ./service-qualite-air
+    ports:
+      - "5002:5002"
+    networks:
+      - smartcity-net
+
+  # --- 3. Service Urgences (gRPC) ---
+  service-urgences:
+    build: ./service-urgences
+    ports:
+      - "50051:50051"
+    networks:
+      - smartcity-net
+
+  # --- 4. Service Événements (GraphQL) ---
+  service-evenements:
+    build: ./service-evenements
+    ports:
+      - "5004:5004"
+    networks:
+      - smartcity-net
+
+  # --- 5. Service Orchestrateur (REST Client) ---
+  service-orchestrateur:
+    build: ./service-orchestrateur
+    ports:
+      - "5005:5005"
+    environment:
+      # C'est ici que la magie opère ! On remplace localhost par le nom du service Docker
+      - APP_URL_MOBILITE=http://service-mobilite:5001
+      - APP_URL_QUALITEAIR=http://service-qualite-air:5002/ws
+      - APP_URL_EVENEMENTS=http://service-evenements:5004/graphql
+      - APP_URL_URGENCES_HOST=service-urgences
+      - APP_URL_URGENCES_PORT=50051
+    depends_on:
+      - service-mobilite
+      - service-qualite-air
+      - service-evenements
+    networks:
+      - smartcity-net
+
+  # --- 6. API Gateway (Point d'entrée unique) ---
+  api-gateway:
+    build: ./api-gateway
+    ports:
+      - "8888:8888"
+    depends_on:
+      - service-orchestrateur
+    networks:
+      - smartcity-net
+
+networks:
+  smartcity-net:
+    driver: bridge

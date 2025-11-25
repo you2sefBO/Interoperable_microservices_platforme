@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.smartcity.urgences.grpc";
+option java_outer_classname = "UrgencesProto";
+
+service UrgencesService {
+  rpc EnvoyerAlerte (AlerteRequest) returns (AlerteResponse);
+  rpc StreamAlerts (stream AlerteRequest) returns (stream AlerteResponse);
+
+  rpc GetAlertesParZone (ZoneRequest) returns (ListeAlertes);
+}
+
+message AlerteRequest {
+  string type = 1; 
+  string location = 2;
+  int32 niveau_gravite = 3;
+}
+
+message AlerteResponse {
+  string id_alerte = 1;
+  string status = 2; 
+}
+
+message ZoneRequest {
+  string zone = 1;
+}
+
+message Alerte { 
+  string id = 1;
+  string niveau = 2; 
+  string description = 3;
+  string zone = 4;
+}
+
+message ListeAlertes {
+  repeated Alerte alertes = 1;
+}

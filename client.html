@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart City Dashboard</title>
+    <style>
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            padding: 20px; 
+            background-color: #f0f2f5; 
+            max-width: 800px; 
+            margin: 0 auto; 
+        }
+        h1 { text-align: center; color: #2c3e50; }
+        .card { 
+            background: white; 
+            padding: 25px; 
+            margin-bottom: 20px; 
+            border-radius: 12px; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
+        }
+        
+        /* Nouveaux styles pour le formulaire */
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; color: #555; }
+        input, select { 
+            width: 100%; 
+            padding: 10px; 
+            border: 1px solid #ddd; 
+            border-radius: 6px; 
+            box-sizing: border-box; /* Important pour ne pas dépasser */
+            font-size: 16px;
+        }
+
+        button { 
+            background-color: #007bff; 
+            color: white; 
+            border: none; 
+            padding: 12px 24px; 
+            font-size: 16px; 
+            cursor: pointer; 
+            border-radius: 6px; 
+            width: 100%;
+            transition: background 0.3s;
+            margin-top: 10px;
+        }
+        button:hover { background-color: #0056b3; }
+        
+        .result-section { margin-top: 15px; border-top: 1px solid #eee; padding-top: 15px; }
+        .tag { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 0.9em; margin-right: 5px; }
+        .tag-bus { background-color: #e3f2fd; color: #0d47a1; }
+        .tag-event { background-color: #f3e5f5; color: #4a148c; }
+        .alert-box { background-color: #ffebee; color: #c62828; padding: 10px; border-radius: 6px; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+    <h1>🏙️ Smart City - Interface Citoyen</h1>
+
+    <div class="card">
+        <h2>🗺️ Planifier un Trajet</h2>
+        <p>Choisissez votre zone et votre ligne de transport :</p>
+        
+        <div class="form-group">
+            <label for="zoneInput">📍 Zone (Qualité Air) :</label>
+            <select id="zoneInput">
+                <option value="Centre">Centre Ville</option>
+                <option value="Nord">Zone Nord (Industrielle)</option>
+                <option value="Sud">Zone Sud (Parc)</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="ligneInput">🚌 Ligne de Transport :</label>
+            <select id="ligneInput">
+                <option value="ligne_1">Ligne 1 (Centre - Gare)</option>
+                <option value="ligne_2">Ligne 2 (Aéroport - Stade)</option>
+                <option value="ligne_3">Ligne 3 (Campus - Plage)</option>
+            </select>
+        </div>
+        
+        <button onclick="planifier()">🚀 Rechercher</button>
+        
+        <div id="resultat-trajet"></div>
+    </div>
+
+    <script>
+        async function planifier() {
+            // 1. Récupérer les valeurs choisies par l'utilisateur
+            const zoneChoisie = document.getElementById('zoneInput').value;
+            const ligneChoisie = document.getElementById('ligneInput').value;
+
+            const div = document.getElementById('resultat-trajet');
+            div.innerHTML = "<p style='text-align:center; color:#666;'>⏳ Interrogation des microservices...</p>";
+
+            try {
+                // 2. Envoyer ces valeurs dynamiques à la Gateway
+                const response = await fetch('http://localhost:8888/api/planifier-trajet', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        zone: zoneChoisie,    // <-- Valeur dynamique
+                        ligneId: ligneChoisie // <-- Valeur dynamique
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Erreur HTTP: ${response.status}`);
+                }
+
+                const data = await response.json();
+                
+                // 3. Affichage des résultats
+                let html = `<div class="result-section">`;
+                
+                // Qualité Air
+                html += `<h3>🌬️ Qualité de l'air (${data.qualiteAir.zone})</h3>`;
+                let color = data.qualiteAir.aqi > 50 ? 'red' : 'green';
+                html += `<p>Indice AQI : <strong style="color:${color}">${data.qualiteAir.aqi}</strong></p>`;
+                
+                // Transports
+                html += `<h3>🚌 Prochains Bus</h3>`;
+                if(data.transports && data.transports.length > 0) {
+                    html += `<ul>`;
+                    data.transports.forEach(t => html += `<li><span class="tag tag-bus">${t.arret}</span> à <strong>${t.passage}</strong></li>`);
+                    html += `</ul>`;
+                } else {
+                    html += `<p><em>Aucun horaire trouvé pour cette ligne.</em></p>`;
+                }
+
+                // Événements
+                if(data.evenements && data.evenements.length > 0) {
+                    html += `<h3>🎉 Événements à proximité</h3><ul>`;
+                    data.evenements.forEach(e => html += `<li><span class="tag tag-event">${e.date}</span> <strong>${e.titre}</strong></li>`);
+                    html += `</ul>`;
+                } else {
+                    html += `<br><em>(Aucun événement signalé par le service GraphQL)</em>`;
+                }
+
+                if(data.alertes && data.alertes.length > 0) {
+                    html += `<div style="margin-top:15px; background-color:#ffebee; border:1px solid #ef9a9a; padding:10px; border-radius:6px;">
+                        <h3 style="margin-top:0; color:#c62828;">🚨 Alertes en cours</h3>
+                        <ul>`;
+                    data.alertes.forEach(a => html += `<li style="color:#c62828; font-weight:bold;">${a}</li>`);
+                    html += `</ul></div>`;
+                }
+
+                // Recommandations
+                if(data.recommendations && data.recommendations.length > 0) {
+                    html += `<div class="alert-box">⚠️ <strong>Conseil :</strong><br>${data.recommendations.join('<br>')}</div>`;
+                }
+
+                html += `</div>`;
+                div.innerHTML = html;
+
+            } catch (error) {
+                console.error(error);
+                div.innerHTML = `<div class="alert-box">
+                    <strong>❌ Erreur</strong><br>
+                    Impossible de joindre l'API Gateway.<br>
+                    <em>${error.message}</em>
+                </div>`;
+            }
+        }
+    </script>
+</body>
+</html>

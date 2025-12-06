@@ -46,8 +46,10 @@ public class OrchestrationService {
     @Value("${app.url.evenements}")
     private String urlEvenements;
 
-    // --- NOUVELLES VARIABLES POUR gRPC ---
-    @Value("${app.url.urgences.host:localhost}") // Valeur par défaut: localhost
+    @Value("${app.url.qualiteair}") 
+    private String urlQualiteAir;
+
+    @Value("${app.url.urgences.host:localhost}") 
     private String grpcHost;
     
     @Value("${app.url.urgences.port:50051}")      // Valeur par défaut: 5003
@@ -56,42 +58,32 @@ public class OrchestrationService {
     public PlanificationResponse planifier(PlanificationRequest request) {
         List<String> recommendations = new ArrayList<>();
         
-        // 1. Appel SOAP (Air)
         AirInfo airInfo = callAirService(request.zone());
         if (airInfo != null && airInfo.aqi() > 50) {
             recommendations.add("Qualité de l'air moyenne. Préférez les transports fermés.");
         }
         
-        // 2. Appel REST (Mobilité)
         List<Horaire> horaires = callMobiliteService(request.ligneId());
         
-        // 3. Appel GraphQL (Événements)
         List<Evenement> evenements = callEvenementsService();
 
-        // 4. Appel gRPC (Urgences) <--- AJOUT MAJEUR
         List<String> alertes = callUrgencesService(request.zone());
         
-        // Retour de la réponse complète (avec alertes)
         return new PlanificationResponse(airInfo, horaires, evenements, alertes, recommendations);
     }
 
-    // --- Méthode pour appeler le service gRPC ---
     private List<String> callUrgencesService(String zone) {
         ManagedChannel channel = null;
         try {
-            // Création du canal
             channel = ManagedChannelBuilder.forAddress(grpcHost, grpcPort)
                     .usePlaintext()
                     .build();
 
-            // Création du client (Stub)
             UrgencesServiceGrpc.UrgencesServiceBlockingStub stub = UrgencesServiceGrpc.newBlockingStub(channel);
 
-            // Appel distant
             ZoneRequest grpcRequest = ZoneRequest.newBuilder().setZone(zone).build();
             ListeAlertes response = stub.getAlertesParZone(grpcRequest);
 
-            // Transformation des résultats
             return response.getAlertesList().stream()
                     .map(alerte -> "[URGENCE " + alerte.getNiveau() + "] " + alerte.getDescription())
                     .collect(Collectors.toList());

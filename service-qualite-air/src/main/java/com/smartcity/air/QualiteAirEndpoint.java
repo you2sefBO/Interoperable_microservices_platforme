@@ -2,7 +2,6 @@ package com.smartcity.air;
 
 import com.smartcity.air.qualiteair.GetAQIRequest;
 import com.smartcity.air.qualiteair.GetAQIResponse;
-//import com.smartcity.air.QualiteAirService;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.ws.server.endpoint.annotation.Endpoint;

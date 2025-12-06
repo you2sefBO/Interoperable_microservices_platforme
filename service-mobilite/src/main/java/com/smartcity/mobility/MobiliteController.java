@@ -1,9 +1,5 @@
 package com.smartcity.mobility;
 
-
-//import com.smartcity.mobility.Horaire;
-//import com.smartcity.mobility.Trafic;
-//import com.smartcity.mobility.MobiliteService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -28,13 +24,31 @@ public class MobiliteController {
     }
 
     
-    @GetMapping("/lignes/{id}/horaires")
-    public ResponseEntity<List<Horaire>> getHoraires(@PathVariable String id) {
-        
-        Optional<List<Horaire>> horaires = mobiliteService.getHorairesForLigne(id);
-
-        return horaires
-                .map(ResponseEntity::ok) 
-                .orElse(ResponseEntity.notFound().build());
+    @GetMapping("/lignes/{ligneId}/horaires")
+    public List<Horaire> getHoraires(@PathVariable String ligneId) {
+        switch (ligneId) {
+            case "ligne_1": 
+                return Arrays.asList(
+                    new Horaire("Place Centrale", "10:00"),
+                    new Horaire("Bibliothèque", "10:10"),
+                    new Horaire("Gare Ferroviaire", "10:20")
+                );
+            case "ligne_2":
+                return Arrays.asList(
+                    new Horaire("Aéroport Terminal 1", "11:00"),
+                    new Horaire("Zone Hôtelière", "11:15"),
+                    new Horaire("Grand Stade", "11:45")
+                );
+            case "ligne_3": 
+                return Arrays.asList(
+                    new Horaire("Université Sciences", "08:30"),
+                    new Horaire("Cité U", "08:40"),
+                    new Horaire("Plage Sud", "09:15")
+                );
+            default:
+                return Arrays.asList(
+                    new Horaire("Arrêt Inconnu", "--:--")
+                );
+        }
     }
 }

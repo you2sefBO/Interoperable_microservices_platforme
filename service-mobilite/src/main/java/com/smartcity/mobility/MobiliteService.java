@@ -1,34 +1,25 @@
 package com.smartcity.mobility;
 
-//import com.smartcity.mobility.Horaire;
-//import com.smartcity.mobility.Trafic;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class MobiliteService {
 
-    private static final Map<String, List<Horaire>> horairesData = Map.of(
-            "ligne_1", List.of(
-                    new Horaire("Centre Ville", "10:00"),
-                    new Horaire("Gare", "10:15")
-            ),
-            "ligne_2", List.of(
-                    new Horaire("Hôpital", "10:05"),
-                    new Horaire("Musée", "10:20")
-            )
-    );
+    @Autowired
+    private HoraireRepository horaireRepository;
 
-    private static final Trafic traficData = new Trafic("Fluide", List.of());
+    public List<Horaire> getHorairesForLigne(String ligneId) {
+        List<HoraireEntity> entities = horaireRepository.findByLigneId(ligneId);
 
-    public Trafic getTraficInfo() {
-        return traficData;
+        return entities.stream()
+                .map(entity -> new Horaire(entity.getArret(), entity.getHeurePassage()))
+                .collect(Collectors.toList());
     }
 
-    public Optional<List<Horaire>> getHorairesForLigne(String ligneId) {
-        return Optional.ofNullable(horairesData.get(ligneId));
+    public Trafic getTraficInfo() {
+        return new Trafic("Fluide (Donnée temps réel simulée)", List.of());
     }
 }

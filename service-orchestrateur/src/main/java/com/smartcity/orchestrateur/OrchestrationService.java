@@ -45,14 +45,14 @@ public class OrchestrationService {
     
     @Value("${app.url.evenements}")
     private String urlEvenements;
-
+    
     @Value("${app.url.qualiteair}") 
     private String urlQualiteAir;
 
-    @Value("${app.url.urgences.host:localhost}") 
+    @Value("${app.url.urgences.host}")
     private String grpcHost;
-    
-    @Value("${app.url.urgences.port:50051}")      // Valeur par défaut: 5003
+
+    @Value("${app.url.urgences.port}")
     private int grpcPort;
 
     public PlanificationResponse planifier(PlanificationRequest request) {
@@ -90,7 +90,7 @@ public class OrchestrationService {
 
         } catch (Exception e) {
             logger.error("Erreur gRPC Urgences", e);
-            return List.of(); // Retourne vide si erreur (ne plante pas l'app)
+            return List.of(); 
         } finally {
             if (channel != null) {
                 channel.shutdown();

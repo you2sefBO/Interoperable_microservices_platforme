@@ -1,0 +1,21 @@
+type Query {
+    evenements: [Evenement]
+
+    incidents: [Incident]
+
+    evenement(id: ID!): Evenement
+}
+
+type Evenement {
+    id: ID!
+    titre: String
+    date: String
+    lieu: String
+}
+
+type Incident {
+    id: ID!
+    type: String 
+    gravite: Int
+    localisation: String
+}
